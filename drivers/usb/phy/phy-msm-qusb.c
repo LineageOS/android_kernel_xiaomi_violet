@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -117,9 +118,6 @@ static unsigned int tune5;
 module_param(tune5, uint, 0644);
 MODULE_PARM_DESC(tune5, "QUSB PHY TUNE5");
 
-static bool eud_connected;
-module_param(eud_connected, bool, 0644);
-MODULE_PARM_DESC(eud_connected, "EUD_CONNECTED");
 
 struct qusb_phy {
 	struct usb_phy		phy;
@@ -193,7 +191,6 @@ static void qusb_phy_enable_clocks(struct qusb_phy *qphy, bool on)
 		clk_disable_unprepare(qphy->ref_clk);
 		clk_disable_unprepare(qphy->ref_clk_src);
 	}
-
 }
 
 static int qusb_phy_gdsc(struct qusb_phy *qphy, bool on)
@@ -697,21 +694,18 @@ static int qusb_phy_set_suspend(struct usb_phy *phy, int suspend)
 			writel_relaxed(0x00,
 				qphy->base + QUSB2PHY_PORT_INTR_CTRL);
 
-			if (!eud_connected) {
-				/* Disable PHY */
-				writel_relaxed(POWER_DOWN |
-					readl_relaxed(qphy->base +
-						QUSB2PHY_PORT_POWERDOWN),
-					qphy->base + QUSB2PHY_PORT_POWERDOWN);
-				/* Make sure that above write is completed */
-				wmb();
-
-				if (qphy->tcsr_clamp_dig_n)
-					writel_relaxed(0x0,
-						qphy->tcsr_clamp_dig_n);
-			}
+			/* Disable PHY */
+			writel_relaxed(POWER_DOWN |
+				readl_relaxed(qphy->base +
+					QUSB2PHY_PORT_POWERDOWN),
+				qphy->base + QUSB2PHY_PORT_POWERDOWN);
+			/* Make sure that above write is completed */
+			wmb();
 
 			qusb_phy_enable_clocks(qphy, false);
+			if (qphy->tcsr_clamp_dig_n)
+				writel_relaxed(0x0,
+					qphy->tcsr_clamp_dig_n);
 			/* Do not disable power rails if there is vote for it */
 			if (!qphy->dpdm_enable)
 				qusb_phy_enable_power(qphy, false);
@@ -1197,6 +1191,7 @@ static int qusb_phy_probe(struct platform_device *pdev)
 		return PTR_ERR(qphy->vdda18);
 	}
 
+	qusb_phy_enable_power(qphy, true);
 	mutex_init(&qphy->phy_lock);
 	platform_set_drvdata(pdev, qphy);
 
@@ -1231,8 +1226,8 @@ static int qusb_phy_probe(struct platform_device *pdev)
 	if (qphy->tcsr_clamp_dig_n)
 		writel_relaxed(0x0, qphy->tcsr_clamp_dig_n);
 
+	qusb_phy_enable_power(qphy, false);
 	qphy->suspended = true;
-
 	return ret;
 }
 
@@ -1241,6 +1236,7 @@ static int qusb_phy_remove(struct platform_device *pdev)
 	struct qusb_phy *qphy = platform_get_drvdata(pdev);
 
 	usb_remove_phy(&qphy->phy);
+
 	qphy->cable_connected = false;
 	qusb_phy_set_suspend(&qphy->phy, true);
 
