@@ -1,4 +1,5 @@
 /* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1043,7 +1044,6 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 						link->link_hdl);
 					link->in_msync_mode = true;
 				}
-
 				rc =  __cam_req_mgr_check_sync_for_mslave(
 					link, slot);
 			} else {
@@ -1057,6 +1057,7 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 					link->link_hdl);
 				link->in_msync_mode = false;
 				link->initial_sync_req = -1;
+
 				if (link->sync_link) {
 					link->sync_link->initial_sync_req = -1;
 					link->sync_link->in_msync_mode = false;
@@ -1111,6 +1112,8 @@ static int __cam_req_mgr_process_req(struct cam_req_mgr_core_link *link,
 			link->state = CAM_CRM_LINK_STATE_READY;
 		}
 		spin_unlock_bh(&link->link_state_spin_lock);
+		if (link->sync_link_sof_skip)
+			link->sync_link_sof_skip = false;
 
 		if (link->sync_link_sof_skip)
 			link->sync_link_sof_skip = false;
@@ -2933,6 +2936,10 @@ int cam_req_mgr_sync_config(
 	link2->is_master = false;
 	link1->initial_skip = false;
 	link2->initial_skip = false;
+	link1->in_msync_mode = false;
+	link2->in_msync_mode = false;
+	link1->initial_sync_req = -1;
+	link2->initial_sync_req = -1;
 
 	link1->in_msync_mode = false;
 	link2->in_msync_mode = false;

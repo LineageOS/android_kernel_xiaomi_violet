@@ -1,6 +1,9 @@
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_req_mgr/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_hyp_intf/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_utils/
+ifeq ($(VERSION_TYPE),longcheer_factory)
+subdir-ccflags-$(CONFIG_SPECTRA_CAMERA) += -DLC_ARCSOFT_CALIBRATION
+endif
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_core/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_sync/
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_smmu/
