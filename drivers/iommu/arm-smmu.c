@@ -15,6 +15,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * Copyright (C) 2013 ARM Limited
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * Author: Will Deacon <will.deacon@arm.com>
  *
@@ -2495,10 +2496,11 @@ static void arm_smmu_domain_remove_master(struct arm_smmu_domain *smmu_domain,
 
 	mutex_lock(&smmu->stream_map_mutex);
 	for_each_cfg_sme(fwspec, i, idx) {
-		if (WARN_ON(s2cr[idx].attach_count == 0)) {
+		if(WARN_ON(s2cr[idx].attach_count == 0)) {
 			mutex_unlock(&smmu->stream_map_mutex);
 			return;
 		}
+
 		s2cr[idx].attach_count -= 1;
 
 		if (s2cr[idx].attach_count > 0)
