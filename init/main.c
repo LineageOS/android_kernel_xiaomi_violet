@@ -510,10 +510,13 @@ static void __init mm_init(void)
 	pti_init();
 }
 
+int fpsensor=1;
+
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
 	char *after_dashes;
+	char *p = NULL;
 
 	set_task_stack_end_magic(&init_task);
 	smp_setup_processor_id();
@@ -548,6 +551,18 @@ asmlinkage __visible void __init start_kernel(void)
 
 	build_all_zonelists(NULL);
 	page_alloc_init();
+
+	p = NULL;
+	p = strstr(command_line, "androidboot.fpsensor=fpc");
+
+/*	if(p) {
+		fpsensor = 1;
+	} else {
+		fpsensor =2;
+	}
+*/
+
+	fpsensor = p ? 1 : 2;
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	parse_early_param();
